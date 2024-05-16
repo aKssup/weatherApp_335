@@ -10,16 +10,18 @@
     <h1>Welcome to the Weather App</h1>
 
     <form action="/weather" method="POST">
-        <div class="form-group">
-          <label for="email">Email:</label>
-          <input type="email" id="email" name="email" required>
-        </div>
-        <div class="form-group">
-          <label for="zipcode">Zipcode:</label>
-          <input type="text" id="zipcode" name="zipcode" required pattern="\d{5}">
-        </div>
-        <button type="submit">Get Weather</button>
-      </form>
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="zipcode">Zipcode:</label>
+        <input type="text" id="zipcode" name="zipcode" required pattern="\d{5}">
+      </div>
+      <button type="submit">Get Weather</button>
+    </form>
+
+    Search history: <a href="/history">History</a>
 </body>
 
 </html>
