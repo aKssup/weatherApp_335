@@ -102,7 +102,7 @@ app.post("/history", (request, response) => {
             let filter = {email: emailCheck};
             const cursor = client.db(databaseAndCollection.db).collection(databaseAndCollection.collection).find(filter);
             const result = await cursor.toArray();
-            if (result) {
+            if (result.length > 0) {
                 zipString = 'Zipcodes (not unique): <br>';
                 ansString = 'History (not unique): <br>';
                 result.forEach(f => {
