@@ -84,3 +84,43 @@ app.post("/weather", (request, response) => {
         }
     }
 });
+
+app.get("/history", (request, response) => {
+    response.render("history");
+});
+
+app.use(bodyParser.urlencoded({extended:false}));
+app.post("/history", (request, response) => {
+    variables = {
+        data: "Email: NONE <br>Zipcode: NONE <br>History: NONE"
+    }
+    async function main() {
+        const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
+        try {
+            await client.connect();
+            let emailCheck = request.body.email;
+            let filter = {email: emailCheck};
+            const cursor = client.db(databaseAndCollection.db).collection(databaseAndCollection.collection).find(filter);
+            const result = await cursor.toArray();
+            if (result) {
+                zipString = 'Zipcodes (not unique): <br>';
+                ansString = 'History (not unique): <br>';
+                result.forEach(f => {
+                    zipString += f.zip + "<br>";
+                    ansString += f.requestBody + "<br>";
+                })
+                variables_new = {
+                    data: `Email: ${result[0].email} <br><br>${zipString} <br>${ansString}`
+                }
+                response.render("historyResults", variables_new)
+            } else {
+                response.render("historyResults", variables)
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            await client.close();
+        }
+    }
+    main().catch(console.error);
+});
