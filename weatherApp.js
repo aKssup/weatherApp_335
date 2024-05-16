@@ -34,29 +34,53 @@ app.get("/", (request, response) => {
     response.render("home");
 });
 
-// const fetch = require('node-fetch'); // Ensure you have node-fetch installed: npm install node-fetch
+app.use(bodyParser.urlencoded({extended:false}));
+app.post("/weather", (request, response) => {
+    // API
+    async function apiCall() {
+        const apiURL = `https://api.openweathermap.org/data/2.5/weather?zip=${request.body.zipcode},us&appid=${process.env.API_KEY}`
+        try {
+            const res = await fetch(apiURL);
+            const data = await res.json();
+            const temp = ((data.main.temp - 273.15) * 9/5 + 32);
+            const tempFeel = ((data.main.feels_like - 273.15) * 9/5 + 32);
+            const ansString = `
+                Weather in ${data.name}:
+                - Temperature: ${temp.toFixed(2)}°F (Feels like: ${tempFeel.toFixed(2)}°F)
+                - Weather: ${data.weather[0].main} (${data.weather[0].description})
+                - Humidity: ${data.main.humidity}%
+                - Wind: ${data.wind.speed} m/s at ${data.wind.deg}°
+                - Visibility: ${data.visibility} meters
+                - Cloudiness: ${data.clouds.all}%
+                ${data.rain ? `- Rain volume (last hour): ${data.rain['1h']} mm` : ''}
+                ${data.snow ? `- Snow volume (last hour): ${data.snow['1h']} mm` : ''}`;
 
-// const getWeatherByZipCode = async (zipCode, apiKey) => {
-//   const apiURL = `https://api.openweathermap.org/data/2.5/weather?zip=${zipCode}&appid=${apiKey}`;
-
-//   try {
-//     const response = await fetch(apiURL);
-//     const weatherData = await response.json();
-
-//     if (response.ok) {
-//       console.log(`Weather in ${weatherData.name}:`);
-//       console.log(`Temperature: ${weatherData.main.temp}K`);
-//       console.log(`Weather: ${weatherData.weather[0].description}`);
-//     } else {
-//       console.error(`Error: ${weatherData.message}`);
-//     }
-//   } catch (error) {
-//     console.error('Fetch error: ', error);
-//   }
-// };
-
-// // Replace 'your_zip_code' and 'your_api_key' with actual values
-// const zipCode = 'your_zip_code';
-// const apiKey = 'your_api_key';
-
-// getWeatherByZipCode(zipCode, apiKey);
+            const variables = {
+                weather: ansString
+            }
+            response.render("weather", variables);
+            main(ansString).catch(console.error);
+        } catch (error) {
+            response.render("weather", {weather: "INVALID ZIP CODE. Check console log for why."})
+            console.log("Fetch Error: ", error);
+        }
+    }
+    apiCall().catch(console.error);
+    // MongoDB
+    async function main(ansString) {
+        const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
+        try {
+            await client.connect();
+            let newUser = {
+                email: request.body.email,
+                zip: request.body.zipcode,
+                requestBody: ansString
+            };
+            await client.db(databaseAndCollection.db).collection(databaseAndCollection.collection).insertOne(newUser);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            await client.close();
+        }
+    }
+});
